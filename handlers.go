@@ -197,6 +197,8 @@ func InMemoryGetHandler(kvstore KVStore) func(w http.ResponseWriter, r *http.Req
 		value, err := kvstore.Get(key)
 
 		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(&InMemoryResponse{Code: FailStatus, Message: err.Error()})
 			return
 		}
 		// Encode results

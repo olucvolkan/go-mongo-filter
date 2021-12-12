@@ -271,7 +271,17 @@ curl --location --request POST 'https://afternoon-eyrie-09851.herokuapp.com/in-m
 ```
 
 ```
+% Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+Dload  Upload   Total   Spent    Left  Speed
+100    96  100    38  100    58     56     86 --:--:-- --:--:-- --:--:--   149
+{
+"key": "active-tabs",
+"value": "getir"
+}
+```
 
+```
+curl --location --request GET 'https://afternoon-eyrie-09851.herokuapp.com/in-memory?key=active-tabs'| jq
 ```
 
 ```
