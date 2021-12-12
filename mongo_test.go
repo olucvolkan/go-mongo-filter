@@ -6,12 +6,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 type mockRepo struct{}
 
 func (mr *mockRepo) FindRecordsWithCreatedAtAndTotalCounts(params *FindRecordsWithCreatedAtAndTotalCountsParams) ([]Row, error) {
 	var result []Row
+	result = append(result, Row{ID: "test", Key: "test", CreatedAt: time.Date(2018, 6, 4, 0, 0, 0, 0, time.UTC), TotalCount: 10})
 	return result, nil
 }
 
@@ -36,10 +38,15 @@ func TestMongoHandlerRequest_UnmarshalJSON(t *testing.T) {
 			status, http.StatusOK)
 	}
 	expected := 0
+	totalCount := 10
 	var mongoHandlerResponse MongoHandlerResponse
 	json.Unmarshal([]byte(rr.Body.String()), &mongoHandlerResponse)
 	if mongoHandlerResponse.Code != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			rr.Body.String(), expected)
+	}
+	if mongoHandlerResponse.Records[0].TotalCount != totalCount {
+		t.Errorf("handler returned unexpected body: got %v want %v",
+			rr.Body.String(), totalCount)
 	}
 }
