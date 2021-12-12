@@ -23,7 +23,6 @@ type Config struct {
 
 func main() {
 	config := newConfig()
-
 	mongoClient := NewMongoClient(config)
 	mongoDatabase := mongoClient.Database(config.Mongo.DB)
 	mongoRepo := NewMongoRepo(config, mongoClient, mongoDatabase)
@@ -33,7 +32,7 @@ func main() {
 	http.HandleFunc("/in-memory/", buildInMemoryHandler(kvstore))
 
 	log.Println("Starting Server")
-	e := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", config.Port), nil)
+	e := http.ListenAndServe(fmt.Sprintf(":%d", config.Port), nil)
 	log.Fatal(e)
 }
 
