@@ -34,8 +34,8 @@ type MongoHandlerResponse struct {
 type InMemoryResponse struct {
 	Code    int    `json:"code,omitempty"`
 	Message string `json:"msg,omitempty"`
-	Key     string `json:"key"`
-	Value   string `json:"value"`
+	Key     string `json:"key,omitempty"`
+	Value   string `json:"value,omitempty"`
 }
 
 // Record
