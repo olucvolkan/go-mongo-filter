@@ -27,9 +27,9 @@ func main() {
 	mongoClient := NewMongoClient(config)
 	mongoDatabase := mongoClient.Database(config.Mongo.DB)
 	mongoRepo := NewMongoRepo(config, mongoClient, mongoDatabase)
-
 	http.HandleFunc("/mongo", buildMongoHandler(mongoRepo))
-	// TODO Add in-memory handler here
+	http.HandleFunc("/in-memory/", inMemoryPostHandler())
+	http.HandleFunc("/in-memory", inMemoryGetHandler())
 
 	log.Println("Starting Server")
 	e := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", config.Port), nil)

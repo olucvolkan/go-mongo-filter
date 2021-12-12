@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"net/http"
+	http "net/http"
 	"time"
 )
 
@@ -18,10 +18,20 @@ type MongoHandlerRequest struct {
 	MaxCount  int       `json:"maxCount"`
 }
 
+type InMemoryRequest struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 type MongoHandlerResponse struct {
 	Code    int      `json:"code"`
 	Message string   `json:"msg"`
 	Records []record `json:"records"`
+}
+
+type InMemoryResponse struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 // Record
@@ -69,10 +79,19 @@ func buildMongoHandler(repo Repo) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
+		if r.Method != "POST" {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(&MongoHandlerResponse{
+				Code:    FailStatus,
+				Message: "Not Found",
+				Records: nil,
+			})
+			return
+		}
+
 		// Decode the post body
 		var request MongoHandlerRequest
 		err := json.NewDecoder(r.Body).Decode(&request)
-
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]interface{}{
@@ -109,6 +128,58 @@ func buildMongoHandler(repo Repo) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func inMemoryPostHandler() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		if r.Method != "POST" {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(&MongoHandlerResponse{
+				Code:    FailStatus,
+				Message: "Not Found",
+			})
+			return
+		}
+
+		var request InMemoryRequest
+		err := json.NewDecoder(r.Body).Decode(&request)
+
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"code": FailStatus,
+				"msg":  "Invalid request",
+			})
+			return
+		}
+		// Encode results
+		json.NewEncoder(w).Encode(&InMemoryResponse{
+			Key:   request.Key,
+			Value: request.Value,
+		})
+	}
+}
+
+func inMemoryGetHandler() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method != "GET" {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"code": FailStatus,
+				"msg":  "Invalid request",
+			})
+			return
+		}
+
+		key := r.URL.Query().Get("key")
+		// Encode results
+		json.NewEncoder(w).Encode(&InMemoryResponse{
+			Key:   key,
+			Value: "getir",
+		})
+	}
+}
 func formatRows(rows []Row) []record {
 	result := make([]record, 0)
 
