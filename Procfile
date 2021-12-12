@@ -1,1 +1,1 @@
-web: bin/olucvolkan
+web: bin/go-case
