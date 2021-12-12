@@ -29,7 +29,7 @@ func main() {
 
 	kvstore := NewInMemoryKVStore()
 	http.HandleFunc("/mongo", buildMongoHandler(mongoRepo))
-	http.HandleFunc("/in-memory/", buildInMemoryHandler(kvstore))
+	http.HandleFunc("/in-memory", buildInMemoryHandler(kvstore))
 
 	log.Println("Starting Server")
 	e := http.ListenAndServe(fmt.Sprintf(":%d", config.Port), nil)
