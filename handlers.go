@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	http "net/http"
+	"sync"
 	"time"
 )
 
@@ -30,8 +32,10 @@ type MongoHandlerResponse struct {
 }
 
 type InMemoryResponse struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
+	Code    int    `json:"code,omitempty"`
+	Message string `json:"msg,omitempty"`
+	Key     string `json:"key"`
+	Value   string `json:"value"`
 }
 
 // Record
@@ -40,6 +44,18 @@ type record struct {
 	CreatedAt  time.Time `json:"createdAt"`
 	TotalCount int       `json:"totalCount"`
 }
+
+type StoreKeyValuePairRequest struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+type InMemoryMap struct {
+	KeyValuePair map[string]string
+	Mutex        *sync.Mutex
+}
+
+var customMap *InMemoryMap
 
 func (r *MongoHandlerRequest) UnmarshalJSON(j []byte) error {
 	var raw map[string]interface{}
@@ -128,30 +144,35 @@ func buildMongoHandler(repo Repo) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func inMemoryPostHandler() func(w http.ResponseWriter, r *http.Request) {
+func buildInMemoryHandler(kvstore KVStore) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" {
+			InMemoryPostHandler(kvstore)(w, r)
+		} else if r.Method == "GET" {
+			InMemoryGetHandler(kvstore)(w, r)
+		}
+	}
+}
+
+func InMemoryPostHandler(kvstore KVStore) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-
-		if r.Method != "POST" {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(&MongoHandlerResponse{
-				Code:    FailStatus,
-				Message: "Not Found",
-			})
-			return
-		}
 
 		var request InMemoryRequest
 		err := json.NewDecoder(r.Body).Decode(&request)
 
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"code": FailStatus,
-				"msg":  "Invalid request",
-			})
+			json.NewEncoder(w).Encode(&InMemoryResponse{Code: FailStatus, Message: "invalid request"})
 			return
 		}
+
+		if ok, err := kvstore.Set(request.Key, request.Value); !ok {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(&InMemoryResponse{Code: FailStatus, Message: err.Error()})
+			return
+		}
+
 		// Encode results
 		json.NewEncoder(w).Encode(&InMemoryResponse{
 			Key:   request.Key,
@@ -160,7 +181,7 @@ func inMemoryPostHandler() func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func inMemoryGetHandler() func(w http.ResponseWriter, r *http.Request) {
+func InMemoryGetHandler(kvstore KVStore) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method != "GET" {
@@ -173,13 +194,35 @@ func inMemoryGetHandler() func(w http.ResponseWriter, r *http.Request) {
 		}
 
 		key := r.URL.Query().Get("key")
+		value, err := kvstore.Get(key)
+
+		if err != nil {
+			return
+		}
 		// Encode results
 		json.NewEncoder(w).Encode(&InMemoryResponse{
 			Key:   key,
-			Value: "getir",
+			Value: value,
 		})
 	}
 }
+
+// Set : In-memory rest api set endpoint
+func Set(key string, val interface{}) {
+	customMap.Mutex.Lock()
+	customMap.KeyValuePair[key] = fmt.Sprint(val)
+	customMap.Mutex.Unlock()
+}
+
+func Get(key string) string {
+	customMap.Mutex.Lock()
+	defer customMap.Mutex.Unlock()
+	if val, ok := customMap.KeyValuePair[key]; ok {
+		return val
+	}
+	return ""
+}
+
 func formatRows(rows []Row) []record {
 	result := make([]record, 0)
 

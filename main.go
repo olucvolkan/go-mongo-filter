@@ -27,9 +27,10 @@ func main() {
 	mongoClient := NewMongoClient(config)
 	mongoDatabase := mongoClient.Database(config.Mongo.DB)
 	mongoRepo := NewMongoRepo(config, mongoClient, mongoDatabase)
+
+	kvstore := NewInMemoryKVStore()
 	http.HandleFunc("/mongo", buildMongoHandler(mongoRepo))
-	http.HandleFunc("/in-memory/", inMemoryPostHandler())
-	http.HandleFunc("/in-memory", inMemoryGetHandler())
+	http.HandleFunc("/in-memory/", buildInMemoryHandler(kvstore))
 
 	log.Println("Starting Server")
 	e := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", config.Port), nil)

@@ -17,6 +17,28 @@ func (mr *mockRepo) FindRecordsWithCreatedAtAndTotalCounts(params *FindRecordsWi
 	return result, nil
 }
 
+func TestMongoHandlerWrongRequestMethod_UnmarshalJSON(t *testing.T) {
+	var jsonStr = []byte(`{
+    "startDate": "2016-01-26",
+    "endDate": "2018-02-02",
+    "minCount": 2700,
+    "maxCount": 3000
+}`)
+	req, err := http.NewRequest("GET", "/mongo", bytes.NewBuffer(jsonStr))
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	rr := httptest.NewRecorder()
+
+	handler := http.HandlerFunc(buildMongoHandler(&mockRepo{}))
+	handler.ServeHTTP(rr, req)
+	if status := rr.Code; status != http.StatusNotFound {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusNotFound)
+	}
+}
+
 func TestMongoHandlerRequest_UnmarshalJSON(t *testing.T) {
 	var jsonStr = []byte(`{
     "startDate": "2016-01-26",
