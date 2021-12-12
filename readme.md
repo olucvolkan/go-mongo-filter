@@ -1,6 +1,7 @@
 # Golang Test Case
 
 ## How to access the app?
+
 ```
 curl --location --request POST 'https://afternoon-eyrie-09851.herokuapp.com/mongo' \
 --header 'Content-Type: application/json' \
@@ -259,8 +260,6 @@ Dload  Upload   Total   Spent    Left  Speed
 }
 ```
 
-
-
 ```
 curl --location --request POST 'https://afternoon-eyrie-09851.herokuapp.com/in-memory/' \
 --header 'Content-Type: application/json' \
@@ -281,22 +280,27 @@ Dload  Upload   Total   Spent    Left  Speed
 ```
 
 ```
-curl --location --request GET 'https://afternoon-eyrie-09851.herokuapp.com/in-memory?key=active-tabs'| jq
+curl --location --request GET 'https://afternoon-eyrie-09851.herokuapp.com/in-memory?key=active-tabs' | jq
 ```
 
 ```
-curl --location --request GET 'https://afternoon-eyrie-09851.herokuapp.com/in-memory?key=active-tab'| jq
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    38  100    38    0     0     55      0 --:--:-- --:--:-- --:--:--    57
+{
+  "key": "active-tabs",
+  "value": "getir"
+}
 ```
-
-
-
 
 ## How to run locally
+
 ```
  ./start.sh
 ```
 
 ## How to test locally
+
 ```
  go test -v
 ```
